@@ -6,7 +6,6 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Spring.Context;
 using Spring.Context.Support;
-using Spring.Objects.Factory.Config;
 using Spring.Objects.Factory.Support;
 
 namespace Com.QueoFlow.Spring.Attributes
@@ -66,35 +65,10 @@ namespace Com.QueoFlow.Spring.Attributes
                     GetTypesWithComponentAttribute(assembly, typesWithComponentTypeAttribute, attributeWhitelist));
 
             /* Diesen Container als Definition hinzufügen */
-            ObjectFactory.RegisterSingleton(this.GetType().FullName, this);
+            ObjectFactory.RegisterSingleton(GetType().FullName, this);
 
             /* -- Alle gefundenen Typen dem Kontext hinzufügen -- */
-            Parallel.ForEach(typesWithComponentTypeAttribute,
-                type =>
-                {
-                    IObjectDefinitionFactory objectDefinitionFactory = new DefaultObjectDefinitionFactory();
-                    ObjectDefinitionBuilder builder =
-                        ObjectDefinitionBuilder.RootObjectDefinition(objectDefinitionFactory, type.Item1);
-                    builder.SetAutowireMode(type.Item2.AutoWiringMode);
-                    builder.SetSingleton(type.Item2.IsSingleton);
-                    IList<PropertyInfo> properties = type.Item1.GetProperties();
-                    foreach (PropertyInfo propertyInfo in properties)
-                    {
-                        IList<PropertyAttribute> customAttributes =
-                            propertyInfo.GetCustomAttributes(typeof(PropertyAttribute), true)
-                                .Cast<PropertyAttribute>()
-                                .ToList();
-                        if (customAttributes.Any())
-                        {
-                            builder.AddPropertyReference(propertyInfo.Name,
-                                customAttributes.First().TypeToInject.FullName);
-                        }else if (propertyInfo.PropertyType == typeof(ISpringFactory))
-                        {
-                            builder.AddPropertyReference(propertyInfo.Name, this.GetType().FullName);
-                        }
-                    }
-                    ObjectFactory.RegisterObjectDefinition(type.Item1.FullName, builder.ObjectDefinition);
-                });
+            Parallel.ForEach(typesWithComponentTypeAttribute, AddObjectDefinition);
 
             /* -- Wenn gewünscht den Kontext registrieren -- */
             if (!skippContextRegistration)
@@ -130,6 +104,43 @@ namespace Com.QueoFlow.Spring.Attributes
             IApplicationContext context = ContextRegistry.GetContext();
             T vm = (T) context.GetObject(typeof(T).FullName, arguments);
             return vm;
+        }
+
+        private void AddObjectDefinition(Tuple<Type, ComponentAttribute> type)
+        {
+            IObjectDefinitionFactory objectDefinitionFactory = new DefaultObjectDefinitionFactory();
+            ObjectDefinitionBuilder builder =
+                ObjectDefinitionBuilder.RootObjectDefinition(objectDefinitionFactory, type.Item1);
+            builder.SetAutowireMode(type.Item2.AutoWiringMode);
+            builder.SetSingleton(type.Item2.IsSingleton);
+            IList<PropertyInfo> properties = type.Item1.GetProperties();
+            foreach (PropertyInfo propertyInfo in properties)
+            {
+                IList<PropertyAttribute> customAttributes =
+                    propertyInfo.GetCustomAttributes(typeof(PropertyAttribute), true)
+                        .Cast<PropertyAttribute>()
+                        .ToList();
+                if (customAttributes.Any())
+                {
+                    builder.AddPropertyReference(propertyInfo.Name,
+                        customAttributes.First().TypeToInject.FullName);
+                    /* TODO: ist kein zu injectender Typ angegeben, den Typ des Properties injecten */
+                }
+                else if (propertyInfo.PropertyType == typeof(ISpringFactory))
+                {
+                    builder.AddPropertyReference(propertyInfo.Name, GetType().FullName);
+                }
+            }
+            ObjectFactory.RegisterObjectDefinition(type.Item1.FullName, builder.ObjectDefinition);
+
+            IList<Type> interfaces = type.Item1.GetInterfaces();
+            foreach (Type implementedInterface in interfaces)
+            {
+                if (!ObjectFactory.GetAliases(type.Item1.FullName).Contains(implementedInterface.FullName))
+                {
+                    ObjectFactory.RegisterAlias(type.Item1.FullName, implementedInterface.FullName);
+                }
+            }
         }
 
         /// <summary>

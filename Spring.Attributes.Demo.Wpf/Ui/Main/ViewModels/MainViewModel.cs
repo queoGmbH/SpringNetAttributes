@@ -40,6 +40,8 @@ namespace Com.QueoFlow.Spring.Attributes.Demo.Wpf.Ui.Main.ViewModels
         public void LoadData()
         {
             Content = DataRepository.GetText();
+
+            Content = SpringFactory.Get<IDataRepository>().GetText();
         }
     }
 }
