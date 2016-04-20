@@ -49,6 +49,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ComponentAttribute.cs" />
+    <Compile Include="ISpringFactory.cs" />
     <Compile Include="MixedApplicationContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyAttribute.cs" />

@@ -146,8 +146,6 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Factories\ViewFactory.cs" />
-    <Compile Include="Factories\ViewModelFactory.cs" />
     <Compile Include="Ui\Main\DesignViewModels\MainDesignViewModel.cs" />
     <Compile Include="Ui\Main\IMainViewModel.cs" />
     <Compile Include="Ui\Main\MainView.xaml.cs">
