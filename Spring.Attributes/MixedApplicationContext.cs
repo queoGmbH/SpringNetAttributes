@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Threading.Tasks;
 using Spring.Context;
 using Spring.Context.Support;
+using Spring.Objects.Factory.Config;
 using Spring.Objects.Factory.Support;
 
 namespace Com.QueoFlow.Spring.Attributes
@@ -64,6 +65,9 @@ namespace Com.QueoFlow.Spring.Attributes
                 assembly =>
                     GetTypesWithComponentAttribute(assembly, typesWithComponentTypeAttribute, attributeWhitelist));
 
+            /* Diesen Container als Definition hinzufügen */
+            ObjectFactory.RegisterSingleton(this.GetType().FullName, this);
+
             /* -- Alle gefundenen Typen dem Kontext hinzufügen -- */
             Parallel.ForEach(typesWithComponentTypeAttribute,
                 type =>
@@ -84,6 +88,9 @@ namespace Com.QueoFlow.Spring.Attributes
                         {
                             builder.AddPropertyReference(propertyInfo.Name,
                                 customAttributes.First().TypeToInject.FullName);
+                        }else if (propertyInfo.PropertyType == typeof(ISpringFactory))
+                        {
+                            builder.AddPropertyReference(propertyInfo.Name, this.GetType().FullName);
                         }
                     }
                     ObjectFactory.RegisterObjectDefinition(type.Item1.FullName, builder.ObjectDefinition);
