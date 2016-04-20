@@ -13,7 +13,7 @@ namespace Com.QueoFlow.Spring.Attributes {
     ///     Spring.net Application Context, der Attribute auswertet aber auch XNL Konfigurationsdateien berücksichtigt.
     /// </summary>
     public class MixedApplicationContext : XmlApplicationContext {
-        private static readonly IList<string> _assemblyNameBlacklist = new List<string>()
+        private readonly IList<string> _assemblyNameBlacklist = new List<string>()
         { "mscorlib", "nCrunch", "NCrunch", "system", "System", "Presentation", "Microsoft" };
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Com.QueoFlow.Spring.Attributes {
             /* Und anschließend alle in den Ursprungsassemblies referenzierten Assemblies rekursiv zur Liste der
              * zu durchsuchenden Assemblies hinzufügen
              * Außer jedoch Blacklisteinträge.*/
-            FindReferencedAssembliesRecursive(null, assembliesToSearchForAttributes, _assemblyNameBlacklist);
+            FindReferencedAssembliesRecursive(null, assembliesToSearchForAttributes);
 
             /* Anschließend die Assemblies nach Typen mit Component Attribute durchsuchen */
             Parallel.ForEach(assembliesToSearchForAttributes,
@@ -76,13 +76,6 @@ namespace Com.QueoFlow.Spring.Attributes {
         }
 
         /// <summary>
-        ///     Liefert die bei der Contexterzeugung verwendete Blacklist für Assemblynamen.
-        /// </summary>
-        public static IList<string> AssemblyNameBlacklist {
-            get { return _assemblyNameBlacklist; }
-        }
-
-        /// <summary>
         ///     Erstellt einen Mixed Application Context und registriert diesen in der Context Registry.
         /// </summary>
         /// <param name="additionalConfigurations"></param>
@@ -102,7 +95,7 @@ namespace Com.QueoFlow.Spring.Attributes {
 
         /// <summary>
         ///     Sucht aus der übergebenen Assembly alle Typen mit dem
-        ///     <see cref="Com.QueoFlow.JiraDesk.Attributes.ComponentAttribute" />
+        ///     <see cref="ComponentAttribute" />
         /// </summary>
         /// <param name="assembly"></param>
         /// <param name="typesWithComponentTypeAttribute"></param>
@@ -111,7 +104,7 @@ namespace Com.QueoFlow.Spring.Attributes {
         private static void GetTypesWithComponentAttribute(Assembly assembly,
                 IList<Tuple<Type, ComponentAttribute>> typesWithComponentTypeAttribute, IList<Type> attributeWhitelist) {
             if (assembly == null) {
-                throw new ArgumentNullException("assembly");
+                throw new ArgumentNullException(nameof(assembly));
             }
             Parallel.ForEach(assembly.GetTypes(),
                     type => {
@@ -132,8 +125,7 @@ namespace Com.QueoFlow.Spring.Attributes {
                     });
         }
 
-        private void FindReferencedAssembliesRecursive(Assembly assembly, IList<Assembly> assembliesToSearchForAttributes,
-                IList<string> assemblyNameBlacklist) {
+        private void FindReferencedAssembliesRecursive(Assembly assembly, IList<Assembly> assembliesToSearchForAttributes) {
             if (assembly != null) {
                 /* Rekursiver aufruf. Hier die Direkten Abhängigkeiten durchlaufen */
                 IList<Assembly> dependencies = assembly.GetReferencedAssemblies().Select(Assembly.Load).ToList();
@@ -141,14 +133,14 @@ namespace Com.QueoFlow.Spring.Attributes {
                     if (!assembliesToSearchForAttributes.Contains(dependency)
                         && !_assemblyNameBlacklist.Any(x => dependency.FullName.StartsWith(x))) {
                         assembliesToSearchForAttributes.Add(dependency);
-                        FindReferencedAssembliesRecursive(dependency, assembliesToSearchForAttributes, assemblyNameBlacklist);
+                        FindReferencedAssembliesRecursive(dependency, assembliesToSearchForAttributes);
                     }
                 }
             } else {
                 /* Initialer Aufruf. Hier die Ausgangsmenge durchlaufen */
                 IList<Assembly> copyOfOriginAssemblies = assembliesToSearchForAttributes.ToList();
                 foreach (Assembly assymblyToScanDependencies in copyOfOriginAssemblies) {
-                    FindReferencedAssembliesRecursive(assymblyToScanDependencies, assembliesToSearchForAttributes, assemblyNameBlacklist);
+                    FindReferencedAssembliesRecursive(assymblyToScanDependencies, assembliesToSearchForAttributes);
                 }
             }
         }
