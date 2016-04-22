@@ -116,15 +116,18 @@ namespace Com.QueoFlow.Spring.Attributes
             IList<PropertyInfo> properties = type.Item1.GetProperties();
             foreach (PropertyInfo propertyInfo in properties)
             {
-                IList<PropertyAttribute> customAttributes =
-                    propertyInfo.GetCustomAttributes(typeof(PropertyAttribute), true)
-                        .Cast<PropertyAttribute>()
+                IList<DependencyAttribute> customAttributes =
+                    propertyInfo.GetCustomAttributes(typeof(DependencyAttribute), true)
+                        .Cast<DependencyAttribute>()
                         .ToList();
-                if (customAttributes.Any())
-                {
+                if (customAttributes.Any()) {
+                    Type typeToInject = customAttributes.First().TypeToInject;
+                    if (typeToInject == null) {
+                        typeToInject = propertyInfo.PropertyType;
+                    }
                     builder.AddPropertyReference(propertyInfo.Name,
-                        customAttributes.First().TypeToInject.FullName);
-                    /* TODO: ist kein zu injectender Typ angegeben, den Typ des Properties injecten */
+                        typeToInject.FullName);
+                    
                 }
                 else if (propertyInfo.PropertyType == typeof(ISpringFactory))
                 {
@@ -179,7 +182,7 @@ namespace Com.QueoFlow.Spring.Attributes
         {
             if (assembly == null)
             {
-                throw new ArgumentNullException(nameof(assembly));
+                throw new ArgumentNullException("assembly");
             }
             Parallel.ForEach(assembly.GetTypes(),
                 type =>

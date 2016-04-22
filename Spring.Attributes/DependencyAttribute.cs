@@ -5,20 +5,27 @@ namespace Com.QueoFlow.Spring.Attributes {
     ///     Attribute, welches über ein Property geschrieben werden kann um einen bestimmten Typen zu injecten
     /// </summary>
     [AttributeUsage(AttributeTargets.Property)]
-    public class PropertyAttribute : Attribute {
+    public class DependencyAttribute : Attribute {
         private readonly Type _typeToInject;
 
         /// <summary>
-        ///     Initialisiert eine neue Instanz der <see cref="T:System.Attribute" />-Klasse.
+        ///     Liefert eine neue Instanz des Attributs mit einem expliziten Typwunsch
         /// </summary>
-        public PropertyAttribute(Type typeToInject) {
+        public DependencyAttribute(Type typeToInject) {
             _typeToInject = typeToInject;
+        }
+
+        /// <summary>
+        ///     Liefert eine neue Instanz des Attributs ohne einen expliziten Typwunsch
+        /// </summary>
+        public DependencyAttribute() {
         }
 
         /// <summary>
         ///     Liefert den Typen, der beim entsprechenden Property Injected werden soll
         /// </summary>
-        public Type TypeToInject {
+        public Type TypeToInject
+        {
             get { return _typeToInject; }
         }
     }

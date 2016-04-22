@@ -16,7 +16,7 @@ namespace Com.QueoFlow.Spring.Attributes.Demo.Wpf.Ui.Main.ViewModels
         /// <summary>
         ///     Setzt ein <see cref="IDataRepository" />
         /// </summary>
-        [Property(typeof(DataRepository))]
+        [Dependency]
         public IDataRepository DataRepository { set; private get; }
 
         /// <summary>
